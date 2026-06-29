@@ -30,7 +30,7 @@ no crashes, no placeholders. Must run with `pip install -r requirements.txt && s
 - No hard-coded secrets — keys read from `.env` only.
 - All pages must render even when `GOOGLE_API_KEY` and `NEWSAPI_KEY` are missing.
 
-## What's Implemented (2026-06-28)
+## What's Implemented (2026-06-28 / 06-29)
 - ✅ Dashboard: Global indices grid (S&P 500, Dow, NASDAQ, NIFTY 50, SENSEX, Russell 2000,
   FTSE 100, VIX), calculated Fear & Greed gauge, sector treemap heatmap, sector performance bar,
   Top Gainers / Top Losers / Most Active / Trending tabs.
@@ -40,14 +40,19 @@ no crashes, no placeholders. Must run with `pip install -r requirements.txt && s
 - ✅ Compare: up to 4 tickers, normalized % return chart, key-metrics table.
 - ✅ News: NewsAPI search + category + country, sentiment badges (keyword-based), open article,
   Gemini AI summary button. Friendly fallback when key missing.
-- ✅ AI Chatbot: Gemini chat with conversation memory + reset. Friendly fallback when key missing.
+- ✅ AI Chatbot: Gemini chat with **multi-conversation history persisted in SQLite**
+  (`conversations` + `chat_messages` tables). Left column = conversation list with
+  ➕ New chat, ✏️ rename, 🗑 delete. Right column = active thread. First user message
+  auto-titles the conversation. Anonymous users get an in-memory thread with a hint to log in.
+  Friendly fallback when `GOOGLE_API_KEY` is missing.
 - ✅ Portfolio: Buy / Sell at live or custom price, P&L, allocation pie, equity curve, delete
   holding, transactions table.
 - ✅ Watchlist: add / remove / live prices.
-- ✅ Auth: signup, login, logout, bcrypt hashing, SQLite storage, session_state-backed.
+- ✅ Auth: signup, login, logout (clears all session keys), bcrypt hashing, SQLite storage.
 - ✅ Theme: dark theme via `.streamlit/config.toml` + custom CSS (`assets/styles.css`).
-  Users can toggle Light/Dark via Streamlit's built-in Settings menu.
-- ✅ Verified end-to-end with Playwright: signup → login → buy AAPL → watchlist NVDA.
+- ✅ **Layout**: `pages/` directory renamed to `views/` so Streamlit's built-in auto-page
+  discovery never competes with our custom `st.navigation` declaration.
+- ✅ Verified end-to-end across 4 test iterations (last: 100% pass, 0 exceptions).
 
 ## Backlog (P1)
 - Allow theme toggle button directly in sidebar (not just via Settings menu).
