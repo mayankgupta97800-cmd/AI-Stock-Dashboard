@@ -82,20 +82,20 @@ with st.sidebar:
 # ---------------- Navigation ----------------
 nav_groups = {
     "Markets": [
-        st.Page(home.render, title="Dashboard", icon="📊", default=True, url_path="dashboard"),
-        st.Page(stock_details.render, title="Stock Details", icon="🔎", url_path="stock"),
-        st.Page(compare.render, title="Compare", icon="📐", url_path="compare"),
-        st.Page(news.render, title="News", icon="📰", url_path="news"),
+        st.Page(home.render, title="Dashboard", icon="📊", default=True),
+        st.Page(stock_details.render, title="Stock Details", icon="🔎"),
+        st.Page(compare.render, title="Compare", icon="📐"),
+        st.Page(news.render, title="News", icon="📰"),
     ],
     "Personal": [
-        st.Page(portfolio.render, title="Portfolio", icon="💼", url_path="portfolio"),
-        st.Page(watchlist.render, title="Watchlist", icon="⭐", url_path="watchlist"),
+        st.Page(portfolio.render, title="Portfolio", icon="💼"),
+        st.Page(watchlist.render, title="Watchlist", icon="⭐"),
     ],
     "AI": [
-        st.Page(chatbot.render, title="AI Chatbot", icon="🤖", url_path="chat"),
+        st.Page(chatbot.render, title="AI Chatbot", icon="🤖"),
     ],
     "Account": [
-        st.Page(auth.render, title="Account", icon="🔐", url_path="account"),
+        st.Page(auth.render, title="Account", icon="🔐"),
     ],
 }
 

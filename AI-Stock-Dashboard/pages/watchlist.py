@@ -16,7 +16,7 @@ def render() -> None:
         st.warning("Please log in to use your watchlist.")
         return
 
-    # Add form
+    # Add form (form submission auto-reruns; no explicit st.rerun needed)
     with st.form("watchlist_add", clear_on_submit=True):
         c1, c2 = st.columns([5, 1])
         with c1:
@@ -27,8 +27,6 @@ def render() -> None:
         if submitted:
             ok, msg = ps.add_to_watchlist(user["id"], ticker)
             (st.success if ok else st.error)(msg)
-            if ok:
-                st.rerun()
 
     tickers = ps.list_watchlist(user["id"])
     if not tickers:
