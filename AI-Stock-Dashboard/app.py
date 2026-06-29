@@ -11,7 +11,7 @@ from database.db import init_db
 from utils.ui import load_css
 
 # Page-render modules (callables)
-from pages import home, stock_details, compare, news, chatbot, portfolio, watchlist, auth
+from views import home, stock_details, compare, news, chatbot, portfolio, watchlist, auth
 
 
 # ---------------- Streamlit setup ----------------
@@ -72,6 +72,9 @@ with st.sidebar:
         if st.button("🚪 Log out", use_container_width=True):
             st.session_state.pop("user", None)
             st.session_state.pop("chat_history", None)
+            st.session_state.pop("active_conversation_id", None)
+            st.session_state.pop("anon_chat", None)
+            st.session_state.pop("rename_target", None)
             st.rerun()
     else:
         st.caption("👋 Log in to unlock portfolio & watchlist.")

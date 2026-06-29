@@ -15,6 +15,9 @@ def render() -> None:
         if st.button("Log out"):
             st.session_state.pop("user", None)
             st.session_state.pop("chat_history", None)
+            st.session_state.pop("active_conversation_id", None)
+            st.session_state.pop("anon_chat", None)
+            st.session_state.pop("rename_target", None)
             st.rerun()
         return
 

@@ -85,8 +85,9 @@ AI-Stock-Dashboard/
 │   ├── stock_service.py    # yfinance wrappers, technicals, F&G
 │   ├── news_service.py     # NewsAPI integration
 │   ├── ai_service.py       # Gemini chat + summarization
+│   ├── chat_service.py     # SQLite-backed multi-conversation history
 │   └── portfolio_service.py# Auth, portfolio, watchlist DB ops
-├── pages/
+├── views/                  # Page render functions (declared via st.navigation)
 │   ├── __init__.py
 │   ├── home.py
 │   ├── stock_details.py
