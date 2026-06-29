@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 3 retest PASSED on all three required scenarios + full-page smoke. The app.py navigation fix (url_path='' on the default Dashboard page only, unique slugs on the other 7 pages) resolves both the 'Page not found' modal AND the iteration-2 navigation-collision regression. No StreamlitAPIException banner is rendered at any point in the session. Watchlist double-add fix verified (2 Tickers + 2 Remove buttons after adding NVDA then TCS.NS, then 1 Ticker after one Remove). Portfolio equity-curve regression guard verified (no Traceback / no stException after Buy 10 AAPL; Equity Curve section renders with 2 plotly chart elements). All 6 sidebar pages render cleanly (0 stException, no 'Page not found'); News and AI Chatbot show their 'key not configured' panels without exception.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "validated_flows": {
+    "precondition_app_loads": "PASS - http://localhost:8501/ renders Dashboard with 'Market Overview' heading, 0 div.stException, no 'Page not found' dialog",
+    "signup_and_login": "PASS - signed up qa_1782715145/qa_1782715145@test.com/test1234, then logged in successfully (sidebar shows 'SIGNED IN AS qa_1782715145', body shows 'You are logged in as qa_1782715145')",
+    "watchlist_double_add_retest": "PASS - section header is '1 Tickers' after adding NVDA, then '2 Tickers' after adding TCS.NS; 'Manage watchlist' expander shows exactly 2 Remove buttons; after clicking one Remove the header is '1 Tickers' again",
+    "portfolio_equity_curve_regression_guard": "PASS - Buy 10 AAPL with default Live price checked: 0 stException, no 'Traceback' in body, 'Equity Curve' section is rendered, .js-plotly-plot count = 2 (equity curve + allocation)",
+    "full_pages_smoke": "PASS - Dashboard / Stock Details / Compare / News / AI Chatbot / Account all render with 0 stException and no 'Page not found'. News page shows NewsAPI 'key not configured' style panel; AI Chatbot shows Gemini 'key not configured' style panel"
+  },
+  "test_report_links": ["/app/test_reports/iteration_3.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "watchlist.py renders the dataframe via st.dataframe (glide-data-grid). The ticker rows are invisible to body.inner_text() because glide renders cells in a <canvas>. This is fine for users but flakes string-based tests; future automated tests should rely on the .section-h count text or the rm_{ticker} button keys to count entries rather than scanning body text for the ticker symbols themselves. Not a bug — informational.",
+    "section-h CSS sets text-transform: uppercase, so Playwright's body.inner_text() returns the rendered uppercase string ('2 TICKERS'). Any future test should compare case-insensitively or read .section-h textContent directly. Not a bug — informational.",
+    "Auth tab still keeps the inactive tab's inputs in DOM (Streamlit st.tabs behaviour), so get_by_label('Username') matches the Log-in tab's hidden 'Email or username' input first. Future tests should use :visible CSS pseudo-class on aria-label selectors. Not a product bug."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (Streamlit-only app; frontend-only testing requested)",
+    "frontend": "100% (all 3 required retests + 6-page smoke pass; 0 exceptions across the entire session)"
+  },
+  "test_credentials": "qa_1782715145 / qa_1782715145@test.com / test1234 (created this iteration). Previous iteration users (qa_1782714629, qa_1782714704, qa_1782714783, qa_1782714835, qa_1782714900) also exist in the same SQLite DB from intermediate runs; main agent may want to wipe DB before next dev cycle if a clean state is desired.",
+  "seed_data_creation": "Created 1 user (qa_1782715145), added NVDA + TCS.NS to watchlist then removed one (final state: 1 ticker for that user). Bought 10 AAPL in portfolio for that user. Multiple intermediate qa_* users from earlier login-flow attempts also persist in users table.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "App at http://localhost:8501/ is healthy. Navigation contract in app.py: Dashboard at '/', other pages at /stock, /compare, /news, /portfolio, /watchlist, /chat, /account. Use page.get_by_role('link', name='X').click() for sidebar nav. For auth forms, switch to 'Sign up' tab first then use input[aria-label='Username']:visible (Sign-up form labels: Username / Email / Password (min 6 chars) / Confirm password / button 'Create account'); for Log-in tab use input[aria-label='Email or username']:visible + input[aria-label='Password']:visible + button 'Log in'. After signup the app does NOT auto-log-in — you must switch to Log in tab and submit. For watchlist count assertions, read page.locator('.section-h').all_text_contents() (returns ['N Tickers']) rather than scanning body.inner_text(). For watchlist row contents, count Remove buttons in the 'Manage watchlist' expander — st.dataframe glide grid is canvas-based and invisible to inner_text. Allow 9-11s after each Watchlist Add (yfinance), 13-14s after Portfolio Buy.",
+  "rca_of_the_issue": "Not applicable — all required retests passed. The iteration-2 navigation collision is fully resolved by the iteration-3 fix: app.py:85 now passes url_path='' on the default Dashboard st.Page only (which Streamlit accepts as the root path '/'), while the other 7 pages get unique url_path slugs ('stock', 'compare', 'news', 'portfolio', 'watchlist', 'chat', 'account'). Streamlit's pathname-uniqueness check at st.navigation() therefore passes, no StreamlitAPIException is raised, and the original 'Page not found' modal also stays gone because the root URL resolves to a real page."
+}
