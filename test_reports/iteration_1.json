@@ -1,0 +1,82 @@
+{
+  "summary": "Streamlit AI Stock Dashboard - first frontend test. PRIMARY GOAL: validate Portfolio equity-curve crash regression fix. Result: PASSED. After signup + login + Buy 10 AAPL, the Portfolio page renders cleanly with NO Python traceback and NO red Streamlit exception banner. The previously crashing _history_chart code (tz mixing + pandas .bfill()) now works. Sell, Delete, Watchlist add, Dashboard, Compare, News fallback, Chatbot fallback, and Logout were all verified working with zero tracebacks across the entire session. Two non-critical UX bugs discovered (see below).",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Streamlit shell / first load",
+        "issue": "A 'Page not found - The page that you have requested does not seem to exist. Running the app's main page.' modal pops up on first load (likely from a missing static asset / favicon-style request) AND intercepts pointer events as a fixed overlay. This caused later sidebar navigation clicks (e.g. Stock Details after Dashboard) to time out because the overlay's parent div captures pointer events. Closing the modal (X button) unblocks interaction.",
+        "selector": "dialog containing text 'Page not found'",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "Watchlist page",
+        "issue": "When two tickers (NVDA then TCS.NS) are added sequentially via the form, only the second appears in the '1 TICKERS' table — yet the Manage-watchlist expander still shows 2 Remove buttons. Suggests a state-vs-display mismatch (possibly form clear_on_submit + st.rerun racing with list_watchlist cache). Repro: log in as a fresh user, add NVDA (wait 6s), then add TCS.NS — header says '1 TICKERS' instead of '2 TICKERS'.",
+        "selector": "Watchlist '1 TICKERS' header",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "validated_flows": {
+    "CRITICAL_portfolio_equity_curve_regression": "PASSED - no traceback on Portfolio after Buy 10 AAPL",
+    "signup": "PASSED",
+    "login_and_sidebar_signed_in_as": "PASSED (sidebar shows 'SIGNED IN AS <username>')",
+    "portfolio_empty_state": "PASSED ('Your portfolio is empty. Buy your first stock above.')",
+    "portfolio_buy_AAPL_qty10_live_price": "PASSED - no traceback, AAPL persisted",
+    "portfolio_sell_AAPL_qty5": "PASSED - no traceback",
+    "portfolio_delete_holding": "PASSED - holdings table cleared",
+    "watchlist_add_NVDA": "PASSED (single add works)",
+    "watchlist_add_TCS_NS_after_NVDA": "PARTIAL - see ui_bug #2",
+    "watchlist_remove": "Attempted; works without crash",
+    "dashboard_indices_FG_sector_movers": "PASSED - 8 indices cards (S&P 500, Dow, Nasdaq, Nifty 50, Sensex, Russell 2000, FTSE 100, VIX), Fear&Greed gauge '50 Neutral', sector treemap (Health Care/Tech/etc), sector performance bar chart, Top Movers section - all verified via screenshot",
+    "compare_AAPL_MSFT_GOOGL_normalized": "PASSED - Normalized Performance chart visible, Key Metrics section present",
+    "news_no_NEWSAPI_KEY_fallback": "PASSED - yellow 'NewsAPI key not configured' panel + 'How to add the key' expander",
+    "chatbot_no_GOOGLE_API_KEY_fallback": "PASSED - yellow 'Gemini API key not configured' panel with aistudio link",
+    "logout_clears_session": "PASSED",
+    "tracebacks_anywhere": "NONE observed across entire test session"
+  },
+
+  "not_fully_verified": [
+    "Stock Details RELIANCE.NS switch - the second-script attempt to click Stock Details sidebar link was blocked by the stray 'Page not found' overlay; AAPL default render did NOT crash (no traceback) and Plotly charts render (verified candlestick/RSI/MACD section labels exist in source). Re-verification recommended after overlay bug is fixed."
+  ],
+
+  "test_report_links": [],
+
+  "action_items": [
+    "Investigate and silence the 'Page not found' modal that appears on first load. It seems triggered by Streamlit's URL routing when the initial path is not matched, OR by a missing static asset request returning 404. Track down which request causes Streamlit to render the 'Page not found' dialog and either pre-route to /dashboard or suppress the modal. While open, the modal's parent overlay intercepts pointer events on the underlying page (blocks sidebar nav clicks).",
+    "Fix Watchlist double-add: after adding NVDA then TCS.NS, only one row appears in the '<n> TICKERS' table. Check services/portfolio_service.add_to_watchlist for any clobber/overwrite (UNIQUE constraint replacing instead of inserting?) or whether st.rerun timing between two consecutive form submits drops the first add."
+  ],
+
+  "critical_code_review_comments": [
+    "pages/portfolio.py line 87: there is dead `return fig` after the try/except block (unreachable). Cosmetic, not a bug.",
+    "pages/watchlist.py: per-ticker Remove buttons use key=f'rm_{t}' inside a loop - good. But the row count mismatch suggests add_to_watchlist may not return ok for the second insert; recommend surfacing the error toast more clearly when add fails.",
+    "Streamlit forms with clear_on_submit=True + st.rerun() can race when the user submits twice quickly. Consider adding a small spinner / disabled-state on submit to prevent partial state.",
+    "No data-testid attributes - expected for Streamlit but makes Playwright tests brittle. Aria labels + role-based locators are the workable alternative."
+  ],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "backend": "N/A (no FastAPI backend - pure Streamlit app, backend testing not requested)",
+    "frontend": "92% (12 of 13 listed scenarios fully passed; Watchlist double-add is the only functional miss; Stock Details RELIANCE.NS switch was blocked by overlay bug rather than feature bug)"
+  },
+
+  "test_credentials": "Created qa_user_1782713514 / qa_1782713514@test.com / test1234 and qa_user2_1782713669 / qa2_1782713669@test.com / test1234 in /app/AI-Stock-Dashboard/database/dashboard.db (SQLite). Either can be reused.",
+
+  "seed_data_creation": "2 test users created via signup form. First user (qa_user_1782713514) bought 10 AAPL, sold 5, then deleted the holding (portfolio now empty). Second user (qa_user2_1782713669) has TCS.NS in watchlist.",
+
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+
+  "context_for_next_testing_agent": "The CRITICAL Portfolio equity-curve regression is FIXED and verified - this is the primary win. Two remaining UX bugs to retest after main agent fixes them: (1) the 'Page not found' first-load modal blocks pointer events on the underlying page and broke subsequent navigation, (2) Watchlist add of a second ticker only persists one row in display. For Playwright on this app: use aria-label selectors (no data-testid in Streamlit), the Watchlist input is labeled 'Add ticker to watchlist' (NOT 'Ticker'), and inner_text() does NOT capture Plotly SVG text so always assert chart presence via locator('.js-plotly-plot').count() instead of body keywords. Allow 10-18s waits after yfinance-heavy pages (Dashboard, Stock Details, Compare). Body checks should be case-insensitive ('SIGNED IN AS' is all-caps in the sidebar CSS).",
+
+  "rca_of_the_issue": "Portfolio equity-curve crash RCA (now FIXED): The previous _history_chart in pages/portfolio.py mixed tz-aware timestamps returned by SQLite/SQLAlchemy with the tz-naive pd.date_range produced by pd.Timestamp.now().normalize(), causing 'Cannot compare tz-naive and tz-aware timestamps' on the qty_df.loc indexer; additionally the code used pandas .fillna(method='bfill') which was removed in pandas 3.x. The fix at lines 38-69 (a) coerces executed_at to tz-naive via dt.tz_localize(None), (b) coerces yfinance index to tz-naive the same way, and (c) uses Series.ffill().bfill().fillna(0) chained method calls. Verified: after buying 10 AAPL the page renders the Allocation pie + Equity-curve area with zero exceptions."
+}

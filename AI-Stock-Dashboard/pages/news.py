@@ -36,19 +36,17 @@ def _render_article(article: dict, idx: int) -> None:
             unsafe_allow_html=True,
         )
         b1, b2 = target.columns([1, 1])
-        with b1:
-            target.link_button("Open Full Article ↗", url, use_container_width=True)
-        with b2:
-            if target.button("✨ Gemini AI Summary", key=f"sum_{idx}", use_container_width=True):
-                if not ai.is_configured():
-                    target.warning("Set `GOOGLE_API_KEY` in your .env to enable AI summaries.")
+        b1.link_button("Open Full Article ↗", url, use_container_width=True)
+        if b2.button("✨ Gemini AI Summary", key=f"sum_{idx}", use_container_width=True):
+            if not ai.is_configured():
+                target.warning("Set `GOOGLE_API_KEY` in your .env to enable AI summaries.")
+            else:
+                with st.spinner("Summarizing..."):
+                    summary = ai.summarize_article(title, desc, article.get("content") or "")
+                if summary:
+                    target.success(summary)
                 else:
-                    with st.spinner("Summarizing..."):
-                        summary = ai.summarize_article(title, desc, article.get("content") or "")
-                    if summary:
-                        target.success(summary)
-                    else:
-                        target.warning("Could not generate summary right now.")
+                    target.warning("Could not generate summary right now.")
         target.divider()
 
 

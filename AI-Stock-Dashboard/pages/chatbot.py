@@ -5,14 +5,18 @@ import streamlit as st
 from services import ai_service as ai
 
 
+def _seed_history() -> list[dict]:
+    return [
+        {"role": "assistant",
+         "content": ("Hi! I'm **FinIQ** — ask me anything about stocks, "
+                     "markets, valuations, or portfolio strategy. "
+                     "(Educational use only, not investment advice.)")},
+    ]
+
+
 def _ensure_history() -> list[dict]:
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [
-            {"role": "assistant",
-             "content": ("Hi! I'm **FinIQ** — ask me anything about stocks, "
-                         "markets, valuations, or portfolio strategy. "
-                         "(Educational use only, not investment advice.)")},
-        ]
+        st.session_state.chat_history = _seed_history()
     return st.session_state.chat_history
 
 
@@ -37,7 +41,7 @@ def render() -> None:
     c1, c2 = st.columns([6, 1])
     with c2:
         if st.button("🔄 Reset", use_container_width=True):
-            st.session_state.chat_history = []
+            st.session_state.chat_history = _seed_history()
             st.rerun()
 
     # Render past messages

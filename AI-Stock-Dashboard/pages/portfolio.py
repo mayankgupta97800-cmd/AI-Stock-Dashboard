@@ -34,45 +34,56 @@ def _history_chart(user_id: int) -> go.Figure | None:
     txs = ps.list_transactions(user_id, limit=1000)
     if txs.empty:
         return None
-    txs = txs.copy()
-    txs["executed_at"] = pd.to_datetime(txs["executed_at"])
-    txs = txs.sort_values("executed_at")
-    start = txs["executed_at"].min().normalize()
-    end = pd.Timestamp.utcnow().normalize()
-    if start == end:
-        start = start - pd.Timedelta(days=30)
-    tickers = sorted(txs["ticker"].unique())
+    try:
+        txs = txs.copy()
+        # Force tz-naive timestamps for consistent date arithmetic
+        txs["executed_at"] = pd.to_datetime(txs["executed_at"], utc=False, errors="coerce")
+        txs = txs.dropna(subset=["executed_at"])
+        if txs.empty:
+            return None
+        if hasattr(txs["executed_at"].dt, "tz") and txs["executed_at"].dt.tz is not None:
+            txs["executed_at"] = txs["executed_at"].dt.tz_localize(None)
+        txs = txs.sort_values("executed_at")
+        start = txs["executed_at"].min().normalize()
+        end = pd.Timestamp.now().normalize()  # tz-naive
+        if start >= end:
+            start = end - pd.Timedelta(days=30)
+        tickers = sorted(txs["ticker"].unique())
 
-    # Build daily quantity series per ticker
-    dates = pd.date_range(start=start, end=end, freq="D")
-    qty_df = pd.DataFrame(0.0, index=dates, columns=tickers)
-    for _, row in txs.iterrows():
-        delta = row["quantity"] if row["action"] == "BUY" else -row["quantity"]
-        qty_df.loc[row["executed_at"].normalize():, row["ticker"]] += delta
+        # Build daily quantity series per ticker
+        dates = pd.date_range(start=start, end=end, freq="D")
+        qty_df = pd.DataFrame(0.0, index=dates, columns=tickers)
+        for _, row in txs.iterrows():
+            delta = row["quantity"] if row["action"] == "BUY" else -row["quantity"]
+            qty_df.loc[row["executed_at"].normalize():, row["ticker"]] += delta
 
-    # Fetch prices once per ticker
-    value = pd.Series(0.0, index=dates)
-    for t in tickers:
-        hist = svc.get_history(t, period="2y")
-        if hist.empty or "Close" not in hist.columns:
-            continue
-        closes = hist["Close"].copy()
-        closes.index = closes.index.tz_localize(None) if closes.index.tz else closes.index
-        closes = closes.reindex(dates, method="ffill").fillna(method="bfill").fillna(0)
-        value = value.add(qty_df[t] * closes, fill_value=0)
+        # Fetch prices once per ticker, ffill onto daily grid
+        value = pd.Series(0.0, index=dates)
+        for t in tickers:
+            hist = svc.get_history(t, period="2y")
+            if hist.empty or "Close" not in hist.columns:
+                continue
+            closes = hist["Close"].copy()
+            if closes.index.tz is not None:
+                closes.index = closes.index.tz_localize(None)
+            closes = closes.reindex(dates).ffill().bfill().fillna(0)
+            value = value.add(qty_df[t] * closes, fill_value=0)
 
-    fig = go.Figure(go.Scatter(
-        x=value.index, y=value.values, mode="lines",
-        fill="tozeroy", line=dict(color="#00D4A4", width=2),
-        fillcolor="rgba(0,212,164,0.12)",
-    ))
-    fig.update_layout(
-        height=300, margin=dict(l=8, r=8, t=8, b=8),
-        paper_bgcolor="#141A26", plot_bgcolor="#141A26",
-        font=dict(color="#E6EAF2"),
-        xaxis=dict(color="#8892A6", gridcolor="rgba(255,255,255,0.05)"),
-        yaxis=dict(title="Portfolio Value", color="#8892A6", gridcolor="rgba(255,255,255,0.05)"),
-    )
+        fig = go.Figure(go.Scatter(
+            x=value.index, y=value.values, mode="lines",
+            fill="tozeroy", line=dict(color="#00D4A4", width=2),
+            fillcolor="rgba(0,212,164,0.12)",
+        ))
+        fig.update_layout(
+            height=300, margin=dict(l=8, r=8, t=8, b=8),
+            paper_bgcolor="#141A26", plot_bgcolor="#141A26",
+            font=dict(color="#E6EAF2"),
+            xaxis=dict(color="#8892A6", gridcolor="rgba(255,255,255,0.05)"),
+            yaxis=dict(title="Portfolio Value", color="#8892A6", gridcolor="rgba(255,255,255,0.05)"),
+        )
+        return fig
+    except Exception:
+        return None
     return fig
 
 

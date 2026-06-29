@@ -81,16 +81,14 @@ def _macd_figure(df: pd.DataFrame) -> go.Figure:
 
 
 def _div_yield_pct(info: dict) -> str:
-    """yfinance v0.2+ returns dividendYield already as a percentage (e.g. 0.45 = 0.45%)."""
+    """Format dividend yield. yfinance v0.2.50+ returns it directly as percent."""
     dy = info.get("dividendYield")
     if dy is None:
         return "—"
-    val = float(dy)
-    # Heuristic: very old versions returned a decimal (0.0045 = 0.45%). If value
-    # is < 0.20 we treat as decimal, else as already-percent.
-    if 0 < val < 0.20:
-        val *= 100
-    return fmt_pct(val)
+    try:
+        return fmt_pct(float(dy))
+    except (TypeError, ValueError):
+        return "—"
 
 
 def _kv_row(label: str, value: str) -> str:

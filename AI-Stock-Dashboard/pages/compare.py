@@ -48,10 +48,10 @@ def _div_yield(info: dict) -> str:
     dy = info.get("dividendYield")
     if dy is None:
         return "—"
-    val = float(dy)
-    if 0 < val < 0.20:
-        val *= 100
-    return fmt_pct(val)
+    try:
+        return fmt_pct(float(dy))
+    except (TypeError, ValueError):
+        return "—"
 
 
 def _metrics_table(tickers: list[str]) -> pd.DataFrame:
