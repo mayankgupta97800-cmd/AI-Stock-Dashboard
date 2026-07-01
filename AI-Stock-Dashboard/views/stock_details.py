@@ -100,6 +100,8 @@ def _kv_row(label: str, value: str) -> str:
 
 def render() -> None:
     st.markdown("## Stock Details")
+    from streamlit_autorefresh import st_autorefresh
+    st_autorefresh(interval=5000, key="stock_refresh")
     # Search bar
     default_ticker = st.session_state.get("selected_ticker", "AAPL")
     col1, col2 = st.columns([3, 1])

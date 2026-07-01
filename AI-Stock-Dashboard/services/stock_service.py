@@ -11,7 +11,7 @@ from config import INDICES, SECTOR_ETFS, POPULAR_TICKERS
 
 # ---------------- Core fetchers (cached) ----------------
 
-@st.cache_data(ttl=120, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)
 def get_history(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
     """Return historical OHLCV. Empty DataFrame on failure."""
     if not ticker:
@@ -26,7 +26,7 @@ def get_history(ticker: str, period: str = "1y", interval: str = "1d") -> pd.Dat
         return pd.DataFrame()
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=30, show_spinner=False)
 def get_info(ticker: str) -> dict:
     """Return ticker metadata. Empty dict on failure."""
     if not ticker:
@@ -38,7 +38,7 @@ def get_info(ticker: str) -> dict:
         return {}
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)
 def get_quote(ticker: str) -> dict:
     """Return a normalized lightweight quote: price, change, pct, prev_close, currency."""
     out = {"ticker": ticker, "price": None, "change": None, "pct": None,
@@ -61,7 +61,7 @@ def get_quote(ticker: str) -> dict:
     return out
 
 
-@st.cache_data(ttl=120, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)
 def get_multi_quotes(tickers: tuple[str, ...]) -> pd.DataFrame:
     """Bulk-fetch latest closes & daily change for a list of tickers."""
     if not tickers:
@@ -134,7 +134,7 @@ def compute_macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int =
 
 # ---------------- Market overview helpers ----------------
 
-@st.cache_data(ttl=120, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)
 def get_indices_overview() -> pd.DataFrame:
     df = get_multi_quotes(tuple(INDICES.keys()))
     if df.empty:
@@ -143,7 +143,7 @@ def get_indices_overview() -> pd.DataFrame:
     return df
 
 
-@st.cache_data(ttl=180, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)
 def get_sector_performance() -> pd.DataFrame:
     df = get_multi_quotes(tuple(SECTOR_ETFS.keys()))
     if df.empty:
@@ -152,7 +152,7 @@ def get_sector_performance() -> pd.DataFrame:
     return df.sort_values("pct", ascending=False).reset_index(drop=True)
 
 
-@st.cache_data(ttl=180, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)
 def get_movers(kind: str = "gainers", limit: int = 10) -> pd.DataFrame:
     """Return top gainers / losers / most active from the curated universe."""
     df = get_multi_quotes(tuple(POPULAR_TICKERS))
