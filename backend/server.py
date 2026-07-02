@@ -22,6 +22,15 @@ db = client[os.environ['DB_NAME']]
 # Create the main app without a prefix
 app = FastAPI()
 
+@app.get("/")
+async def home():
+    return {
+        "message": "AI Stock Dashboard Backend is running 🚀"
+    }
+
+# Create a router with the /api prefix
+api_router = APIRouter(prefix="/api")
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
